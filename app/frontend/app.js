@@ -6,7 +6,9 @@ const COLORS = {
 };
 
 let products = [];
+let categories = [];
 let filter = 'all';
+let editingId = null;   // the product being edited, or null
 
 const $ = id => document.getElementById(id);
 const money = n => `$${Number(n).toFixed(2)}`;
@@ -15,7 +17,7 @@ const escape = s => String(s).replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 async function loadCategories() {
-  let categories = Object.keys(COLORS);
+  categories = Object.keys(COLORS);
   try {
     const response = await fetch(`${API}/categories`);
     if (response.ok) categories = await response.json();
@@ -57,6 +59,7 @@ function visibleProducts() {
 function render() {
   const list = visibleProducts();
   $('product-list').innerHTML = list.map(p => {
+    if (p.id === editingId) return editRow(p);
     const color = COLORS[p.category] || COLORS.Other;
     return `<li class="${p.bought ? 'done' : ''}">
       <input type="checkbox" ${p.bought ? 'checked' : ''} onchange="toggleBought(${p.id}, this.checked)" aria-label="Bought">
@@ -65,7 +68,8 @@ function render() {
         <div class="meta"><span class="chip" style="background:${color}1a;color:${color}">${escape(p.category)}</span>${p.quantity} × ${money(p.price)}</div>
       </div>
       <span class="cost">${money(p.price * p.quantity)}</span>
-      <button class="delete" onclick="deleteProduct(${p.id})" aria-label="Delete">✕</button>
+      <button class="icon" onclick="startEdit(${p.id})" aria-label="Edit" title="Edit">✎</button>
+      <button class="icon delete" onclick="deleteProduct(${p.id})" aria-label="Delete" title="Delete">✕</button>
     </li>`;
   }).join('');
   $('empty').hidden = list.length > 0;
@@ -74,6 +78,55 @@ function render() {
   const done = products.filter(p => p.bought).length;
   $('progress-text').textContent = `${done} of ${products.length} bought`;
   $('progress-bar').style.width = products.length ? `${(done / products.length) * 100}%` : '0';
+}
+
+// Edit mode: the row turns into a small form
+function editRow(p) {
+  const options = categories.map(c =>
+    `<option value="${escape(c)}" ${c === p.category ? 'selected' : ''}>${escape(c)}</option>`).join('');
+  return `<li class="editing">
+    <form class="edit-form" onsubmit="saveEdit(event, ${p.id})" onkeydown="if (event.key === 'Escape') cancelEdit()">
+      <input type="text" name="name" value="${escape(p.name)}" required maxlength="100" aria-label="Name">
+      <input type="number" name="price" value="${p.price}" step="0.01" min="0" required aria-label="Price">
+      <input type="number" name="quantity" value="${p.quantity}" min="1" required aria-label="Quantity">
+      <select name="category" aria-label="Category">${options}</select>
+      <button type="submit">Save</button>
+      <button type="button" class="secondary" onclick="cancelEdit()">Cancel</button>
+    </form>
+  </li>`;
+}
+
+function startEdit(id) {
+  editingId = id;
+  render();
+  const input = document.querySelector('.edit-form input[name="name"]');
+  if (input) { input.focus(); input.select(); }
+}
+
+function cancelEdit() {
+  editingId = null;
+  render();
+}
+
+async function saveEdit(e, id) {
+  e.preventDefault();
+  const f = e.target.elements;
+  const response = await fetch(`${API}/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: f.name.value.trim(),
+      price: parseFloat(f.price.value),
+      quantity: parseInt(f.quantity.value, 10) || 1,
+      category: f.category.value
+    })
+  });
+  if (!response.ok) {
+    alert(`Could not save (${response.status}). Check docker compose logs backend.`);
+    return;
+  }
+  editingId = null;
+  loadProducts();
 }
 
 // Stats come from a different service (Node.js). If it is down,

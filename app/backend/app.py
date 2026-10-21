@@ -78,15 +78,28 @@ def add_product():
     return jsonify(product), 201
 
 
-# Change part of a product: {"bought": true} or {"quantity": 3}
+# Change part of a product: any of name, price, quantity, category, bought.
+# Example: {"bought": true}  or  {"name": "Oat milk", "price": 6.5}
 @app.route('/products/<int:product_id>', methods=['PATCH'])
 def update_product(product_id):
     data = request.get_json() or {}
     changes = {}
+    try:
+        if 'name' in data:
+            name = str(data['name']).strip()
+            if not name:
+                return jsonify({'error': 'name cannot be empty'}), 400
+            changes['name'] = name[:100]
+        if 'price' in data:
+            changes['price'] = max(0, float(data['price']))
+        if 'quantity' in data:
+            changes['quantity'] = max(1, int(data['quantity']))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'price and quantity must be numbers'}), 400
+    if 'category' in data:
+        changes['category'] = data['category'] if data['category'] in CATEGORIES else 'Other'
     if 'bought' in data:
         changes['bought'] = bool(data['bought'])
-    if 'quantity' in data:
-        changes['quantity'] = max(1, int(data['quantity']))
     if not changes:
         return jsonify({'error': 'nothing to update'}), 400
 

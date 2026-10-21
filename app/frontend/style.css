@@ -52,8 +52,16 @@ li .meta { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
 li .cost { font-weight: 700; font-variant-numeric: tabular-nums; }
 li.done .name { text-decoration: line-through; color: var(--muted); }
 li.done .cost { color: var(--muted); }
-li .delete { background: transparent; color: var(--muted); padding: 0.3rem 0.55rem; font-size: 1.1rem; line-height: 1; }
+li .icon { background: transparent; color: var(--muted); padding: 0.3rem 0.5rem; font-size: 1.1rem; line-height: 1; }
+li .icon:hover { background: #e0e7ff; color: var(--blue); }
 li .delete:hover { background: #fee2e2; color: var(--red); }
+li.editing { background: #f8fafc; padding: 0.6rem; border-radius: 10px; }
+.edit-form { flex: 1; display: grid; grid-template-columns: 2fr 1fr 70px 1.2fr auto auto; gap: 0.4rem; }
+.edit-form input, .edit-form select { padding: 0.4rem 0.55rem; }
+.edit-form button { padding: 0.4rem 0.8rem; }
+button.secondary { background: #e2e8f0; color: var(--ink); }
+button.secondary:hover { background: #cbd5e1; }
+@media (max-width: 640px) { .edit-form { grid-template-columns: 1fr 1fr; } .edit-form input[name="name"] { grid-column: span 2; } }
 .chip { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-right: 0.35rem; }
 .empty { color: var(--muted); text-align: center; padding: 1.5rem 0; margin: 0; }
 
