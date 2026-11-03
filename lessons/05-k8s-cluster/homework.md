@@ -14,7 +14,7 @@ cd devops-2027-shoplist
 git pull --no-rebase --no-edit
 ```
 
-3. **להפעיל Kubernetes ב-Docker Desktop**, בדיוק כמו בכיתה (מדריך, חלק 4, שלב 1): Kubernetes ← Create cluster ← kubeadm. לחכות ל-**Kubernetes running**, לפתוח טרמינל חדש, ולבדוק:
+3. **להפעיל Kubernetes ב-Docker Desktop**, בדיוק כמו בכיתה (מדריך, חלק 4, שלב 1): גלגל השיניים (Settings) ← Kubernetes ← לסמן Enable Kubernetes ← kubeadm ← Apply & restart. לחכות ל-**Kubernetes running**, לפתוח טרמינל חדש, ולבדוק:
 
 ```shell
 kubectl config current-context

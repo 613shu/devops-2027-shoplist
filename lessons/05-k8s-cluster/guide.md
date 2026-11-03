@@ -187,12 +187,29 @@ pods באים והולכים. Service נותן שם וכתובת קבועים, �
 
 **למה Docker Desktop:** כבר מותקן, kubectl מגיע איתו, וה-cluster משתמש באותו מנוע Docker, ולכן רואה את ה-images שבניתן בלי לייבא אותם.
 
-### שלב 1 — להפעיל את Kubernetes
+### שלב 1 — להפעיל את Kubernetes ב-Docker Desktop
 
-1. ב-Docker Desktop, בתפריט הצד: **Kubernetes**. (בגרסאות ישנות: Settings ← Kubernetes.)
-2. **Create cluster**, ולבחור **kubeadm** (node אחד). (בגרסאות ישנות: לסמן Enable Kubernetes, ואז Apply & restart.)
-3. לחכות לסימון ירוק: **Kubernetes running**. בפעם הראשונה זה לוקח כמה דקות.
-4. **לפתוח טרמינל חדש**, ולבדוק:
+Kubernetes כבר נמצא בתוך Docker Desktop, רק כבוי. מדליקים אותו פעם אחת, והוא נשאר דולק גם אחרי שסוגרים ופותחים את Docker Desktop.
+
+**א. לוודא ש-Docker עצמו רץ.** לפתוח את Docker Desktop, ולחכות שבפינה השמאלית התחתונה יופיע **Engine running** בירוק.
+
+**ב. להיכנס להגדרות.** ללחוץ על **גלגל השיניים** ⚙️ (Settings) בפינה הימנית העליונה של החלון.
+
+**ג. לבחור Kubernetes.** בתפריט שבצד שמאל של מסך ההגדרות: **Kubernetes**.
+
+**ד. להפעיל.** לסמן את התיבה **Enable Kubernetes**.
+- אם מופיעה שאלה **Cluster provisioning method**, לבחור **kubeadm** (node אחד). לא kind.
+- את שאר התיבות להשאיר כמו שהן.
+
+**ה. לשמור.** ללחוץ על **Apply & restart** (בגרסאות מסוימות הכפתור נקרא **Apply**) בפינה הימנית התחתונה. אם נפתח חלון ששואל אם להתקין את Kubernetes: **Install**.
+
+**ו. לחכות.** Docker Desktop מוריד את ה-images של ההנהלה ומפעיל את ה-cluster. בפעם הראשונה זה לוקח כמה דקות. כשהוא מוכן, בפינה השמאלית התחתונה מופיע, ליד Engine running, גם **Kubernetes running** בירוק (או סמל ההגה ☸ בירוק).
+
+> **אצלך המסך נראה אחרת?** בגרסאות חדשות של Docker Desktop יש בתפריט הצד של החלון הראשי לשונית **Kubernetes** עם כפתור **Create cluster**. אם יש לך אותה: Create cluster ← **kubeadm** ← Create, ומשם ממשיכים מ-ו.
+
+> **תקוע ב-Starting יותר מ-10 דקות?** Settings ← Resources: לוודא שיש לפחות 4GB זיכרון. אם עדיין תקוע: Settings ← Kubernetes ← **Reset Kubernetes Cluster**, ולחכות שוב.
+
+**ז. לפתוח טרמינל חדש** (טרמינל שהיה פתוח קודם לא מכיר את kubectl), ולבדוק:
 
 ```shell
 kubectl config current-context
@@ -330,6 +347,8 @@ kubectl get pods -n shoplist
 
 | בעיה | סיבה | פתרון |
 |---|---|---|
+| אין Kubernetes בתפריט ההגדרות | Docker Desktop ישן מאוד, או שה-engine לא רץ | לחכות ל-Engine running. אם עדיין אין: לעדכן את Docker Desktop |
+| Kubernetes תקוע ב-Starting | הורדה איטית או חוסר זיכרון | Settings ← Resources: לפחות 4GB. אחר כך Settings ← Kubernetes ← Reset Kubernetes Cluster |
 | `kubectl: command not found` / לא מזוהה | הטרמינל נפתח לפני ההפעלה | לסגור ולפתוח טרמינל |
 | `The connection to the server ... was refused` | Kubernetes לא רץ, או context אחר | לבדוק בממשק "Kubernetes running", ו-`kubectl config use-context docker-desktop` |
 | `No resources found in default namespace` | שכחתן `-n shoplist` | להוסיף `-n shoplist` |
