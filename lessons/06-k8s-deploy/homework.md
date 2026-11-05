@@ -105,11 +105,13 @@ devops-2027-shoplist/
 - [ ] ה-Service של frontend: `type: NodePort`, `port: 80`, `targetPort: 80`, `nodePort: 30080`.
 
 ### ד5 — הכל בפקודה אחת
-- [ ] מהתיקייה הראשית של הריפו:
+- [ ] מהתיקייה הראשית של הריפו. **קודם ה-namespace**, ורק אחר כך כל התיקייה:
   ```shell
+  kubectl apply -f kubernetes/namespace.yml
   kubectl apply -f kubernetes/
   kubectl get all -n shoplist
   ```
+  > למה בשני שלבים? `kubectl apply -f kubernetes/` מחיל את הקבצים **בסדר אלפביתי**: `app-config.yml` ו-`backend-deployment.yml` לפני `namespace.yml`. ב-cluster בבית עוד אין namespace בשם `shoplist`, והם ייכשלו עם `namespaces "shoplist" not found`.
 - [ ] ארבעה pods, כולם `1/1 Running`, ואין `RESTARTS` שממשיכים לעלות.
 
 > הקבצים מוחלים בסדר אלפביתי, אז ה-frontend יכול לעלות לפני ה-Service של stats וליפול פעם או פעמיים. זה תקין: Kubernetes מרים אותו שוב, עד שהכל קיים.
@@ -239,6 +241,7 @@ git push
 |---|---|
 | `kubectl` מחזיר `connection refused` | Kubernetes לא רץ ב-Docker Desktop. לבדוק למטה משמאל: **Kubernetes running** |
 | `ErrImageNeverPull` | לבנות את ה-images בבית (ד1). images מהכיתה לא מגיעים הביתה |
+| `namespaces "shoplist" not found` | להחיל קודם את `kubernetes/namespace.yml`, ואז שוב את כל התיקייה |
 | `configmap "app-config" not found` | להחיל את `app-config.yml`. `kubectl apply -f kubernetes/` מחיל את כולם |
 | `couldn't find key DB_HOST in ConfigMap` | השם ב-`key` לא זהה בדיוק למפתח ב-`data` |
 | המוצרים נעלמו אחרי מחיקת ה-pod | ה-PVC לא מחובר: לבדוק `volumes` ו-`volumeMounts` ב-postgres, ושה-`name` זהה בשניהם |

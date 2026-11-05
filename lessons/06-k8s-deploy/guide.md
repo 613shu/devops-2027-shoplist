@@ -759,7 +759,9 @@ kubectl get endpoints backend -n shoplist
 kubectl apply -f kubernetes/
 ```
 
-ושום דבר לא ישתנה: `unchanged` ליד כל קובץ. זה הכוח של declarative: מריצות את אותה פקודה כמה פעמים שרוצות, והתוצאה זהה.
+ושום דבר לא ישתנה: `unchanged` ליד כל קובץ.
+
+> **ב-cluster חדש** (למשל בבית), להחיל קודם את `kubernetes/namespace.yml`. הקבצים מוחלים בסדר אלפביתי, ומה שקודם ל-`namespace.yml` ייכשל אם ה-namespace עוד לא קיים. זה הכוח של declarative: מריצות את אותה פקודה כמה פעמים שרוצות, והתוצאה זהה.
 
 ---
 
