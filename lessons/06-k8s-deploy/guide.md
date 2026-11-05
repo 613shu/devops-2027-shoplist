@@ -97,6 +97,8 @@ docker images shoplist-*
 
 ## חלק 2 — מושגים חדשים
 
+> **המשפט של היום: ה-pod זמני. כל מה שחשוב גר מחוץ לו.** הגדרות ב-ConfigMap, סיסמה ב-Secret, נתונים ב-PVC, וכתובת ב-Service. כל המושגים בחלק הזה הם תשובה לשאלה "איפה שומרים את זה, כדי שלא ייעלם עם ה-pod?"
+
 ### קובץ YAML של Kubernetes: ארבע קומות
 
 מהיום כותבות קבצים במקום פקודות מהירות. לכל קובץ אותו מבנה:
@@ -122,6 +124,39 @@ spec:                   # המצב הרצוי. כאן כל סוג שונה
 **איך זה עובד:** ה-Deployment מדביק `app: backend` על כל pod שהוא יוצר (`template.metadata.labels`), ומזהה את ה-pods שלו לפי אותה מדבקה (`selector.matchLabels`). ה-Service שולח שיחות לכל pod עם המדבקה שב-`selector` שלו.
 
 > **טעות נפוצה:** מדבקה שונה ב-Service. ה-Service נוצר בלי שגיאה, אבל אין מאחוריו אף pod, והדפדפן לא מקבל תשובה. בודקות עם `kubectl get endpoints -n shoplist`: Service בלי כתובות הוא Service בלי pods.
+
+### Service לעומק: שלושה סוגים
+
+**מה זה:** Service נותן ל-pods שם קבוע וכתובת IP קבועה, ומחלק ביניהם בקשות. ה-`type` קובע **מי יכולה להתקשר**. תחשבו על מרכזייה טלפונית.
+
+| סוג | במרכזייה | מה הוא נותן | מי מגיעה | ב-ShopList |
+|---|---|---|---|---|
+| **ClusterIP** (ברירת מחדל, בלי `type`) | שלוחה פנימית | כתובת IP וירטואלית ושם ב-DNS: `backend`, או בשם המלא `backend.shoplist.svc.cluster.local` | רק מתוך ה-cluster | postgres, backend, stats |
+| **NodePort** | דלת בכל מטבח | כל מה ש-ClusterIP נותן, ועוד פורט פתוח **על כל node**, בטווח 30000–32767 | מהמחשב. ב-Docker Desktop: `localhost` | frontend, בכיתה |
+| **LoadBalancer** | מספר ציבורי | כל מה ש-NodePort נותן, ועוד מאזן עומס של ספק הענן עם כתובת ציבורית | מהאינטרנט | frontend, בענן. עולה כסף |
+
+כל סוג בנוי על הקודם: LoadBalancer מכיל NodePort, ו-NodePort מכיל ClusterIP.
+
+> **רק לדעת שקיימים:** ExternalName (שם שמפנה לכתובת מחוץ ל-cluster), ו-headless (`clusterIP: None`, בלי כתובת משלו). ובענן לרוב לא נותנים LoadBalancer לכל סרוויס, אלא שמים **Ingress**: דלת אחת שמחלקת לפי כתובת. Ingress הוא לא סוג של Service.
+
+**שלושת הפורטים**, בדרך מהדפדפן ל-frontend:
+
+| | nodePort | port | targetPort |
+|---|---|---|---|
+| מה זה | הדלת על ה-node | השלוחה של ה-Service | הפורט שה-container באמת מאזין בו |
+| ב-frontend | 30080 | 80 | 80 |
+
+בתוך ה-cluster אין nodePort: Nginx פונה ל-`backend:5000` (ה-port), ומגיע ל-`targetPort: 5000` ב-pod. port ו-targetPort לא חייבים להיות שווים.
+
+**איך ה-Service מוצא pods:** ה-`selector` מחפש pods עם המדבקה, ושומר רשימה עדכנית של הכתובות שלהם, **רק של אלה שה-readinessProbe שלהם עבר**. הרשימה נקראת **endpoints**. kube-proxy (השליחה ממפגש 5) דואג שכל בקשה לכתובת של ה-Service תגיע לאחד מהם.
+
+```shell
+kubectl get svc -n shoplist
+kubectl get endpoints -n shoplist
+kubectl describe svc backend -n shoplist
+```
+
+> **טעות נפוצה:** לתת NodePort או LoadBalancer לכל סרוויס "ליתר ביטחון". כל דלת פתוחה היא עוד מקום שאפשר להיכנס ממנו. מסד נתונים לא צריך דלת לרחוב אף פעם.
 
 ### ConfigMap: הדף על המקרר
 
@@ -156,6 +191,38 @@ echo c2hvcHBhc3M= | base64 -d
 > **טעות נפוצה, והכי חשובה היום: base64 הוא לא הצפנה.** זה כמו כתב ראי: נראה מוזר, אבל כל מי שמחזיקה מראה קוראת. ההגנה האמיתית היא **מי רשאית לפתוח את המעטפה** (הרשאות, RBAC). ובעבודה אמיתית לא עושים commit לקובץ Secret עם סיסמה אמיתית.
 
 > **`echo -n`:** בלי `-n`, נכנסת לקידוד גם ירידת שורה, והסיסמה לא תתאים.
+
+### Secret לעומק: מה קורה לסיסמה
+
+**המסע של הסיסמה:**
+
+1. `kubectl apply` שולח את ה-Secret ל-**API server**, שבודק שמותר לך ליצור אותו.
+2. ה-Secret נשמר ב-**etcd**. **כברירת מחדל בדיוק כמו שכתבנו: base64, בלי הצפנה.** מי שיש לה גישה ל-etcd או לגיבוי שלו, רואה הכל.
+3. pod שצריך את ה-Secret משובץ ל-node. **רק ה-kubelet של אותו node** מקבלת אותו.
+4. ה-kubelet מפענחת ומכניסה לתוך ה-container, באחת משתי דרכים:
+
+| | משתנה סביבה (`env`, `envFrom`), אצלנו | קובץ (Secret כ-volume) |
+|---|---|---|
+| איך זה נראה בפנים | `DB_PASSWORD=shoppass` | קובץ לכל מפתח, למשל `/etc/secrets/POSTGRES_PASSWORD` |
+| איפה יושב | בזיכרון של התהליך | בזיכרון (tmpfs), לא בדיסק של ה-node |
+| משנים את ה-Secret | **לא נכנס** עד שה-pod עולה מחדש: `kubectl rollout restart` | מתעדכן לבד, תוך כדקה |
+
+**מה באמת שומר על הסיסמה:**
+
+| שכבה | מה זה |
+|---|---|
+| **הרשאות (RBAC)** | מי רשאית לקרוא Secrets ב-namespace. אפשר לראות Deployments בלי לראות Secrets. שימו לב: מי שיכולה ליצור pod ב-namespace, יכולה לחבר אליו כל Secret שבו |
+| **הצפנה ב-etcd** | encryption at rest. בענן מנוהל (למשל EKS) מצפינים עם מפתח של הענן (KMS) |
+| **לא ב-Git** | הסודות בכספת חיצונית (HashiCorp Vault, AWS Secrets Manager), וכלי כמו External Secrets מושך אותם ל-cluster. או Sealed Secrets: מוצפן לפני ה-commit, ורק ה-cluster יכול לפתוח |
+
+**עוד שימושי:**
+
+| פקודה או שדה | מה זה |
+|---|---|
+| `stringData:` במקום `data:` | כותבות טקסט רגיל, ו-Kubernetes מקודד לבד. נוח, אבל הסיסמה גלויה בקובץ |
+| `kubectl describe secret postgres-secret -n shoplist` | מראה רק שמות מפתחות וגדלים, בלי הערכים |
+| `kubectl create secret generic postgres-secret --from-literal=POSTGRES_PASSWORD=shoppass -n shoplist` | יוצר Secret בלי קובץ, ולכן בלי סיכון ל-commit |
+| `type: Opaque` / `kubernetes.io/tls` / `kubernetes.io/dockerconfigjson` | סודות כלליים (אצלנו) / תעודה / סיסמה ל-registry פרטי (שיעור 8) |
 
 ### PersistentVolumeClaim: טופס בקשה לארונית
 
