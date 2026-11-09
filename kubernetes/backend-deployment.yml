@@ -1,0 +1,46 @@
+# backend-deployment.yml: ה-backend. ה-image שבנינו, והסיסמאות מה-Secret
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: shoplist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ____                     # המדבקה של ה-backend
+  template:
+    metadata:
+      labels:
+        app: ____                   # אותה מדבקה בדיוק
+    spec:
+      containers:
+        - name: backend
+          image: ____               # ה-image שבנינו בשלב 1, כולל התגית
+          imagePullPolicy: ____     # לא להוריד מהאינטרנט: ה-image כבר במחשב
+          env:
+            - name: DB_HOST
+              value: ____           # חוט! השם של ה-Service של postgres. לא סוד, אז כתוב ישר
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ____        # חוט! השם של ה-Secret
+                  key: ____         # חוט! איזה מפתח ב-Secret מחזיק את שם מסד הנתונים?
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ____
+                  key: ____         # איזה מפתח מחזיק את המשתמש?
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ____
+                  key: ____         # איזה מפתח מחזיק את הסיסמה?
+          ports:
+            - containerPort: ____   # הפורט של Flask
+          readinessProbe:
+            httpGet:
+              path: ____            # הכתובת שעונה "אני מוכן"
+              port: ____
+            initialDelaySeconds: 5
+            periodSeconds: 10

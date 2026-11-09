@@ -1,0 +1,9 @@
+# postgres-configmap.yml: הדף על המקרר. init.sql, שיוצר את הטבלה בפעם הראשונה
+apiVersion: v1
+kind: ____                  # איזה משאב שומר הגדרות רגילות, לא סודיות?
+metadata:
+  name: postgres-init       # חוט! postgres-deployment יחבר אותו לפי השם הזה
+  namespace: shoplist
+data:
+  ____: |                   # שם הקובץ שיופיע בתוך ה-container (אותו שם כמו בתיקייה sql/)
+    -- מחליפות את השורה הזו בתוכן של sql/init.sql, מוזח ב-4 רווחים

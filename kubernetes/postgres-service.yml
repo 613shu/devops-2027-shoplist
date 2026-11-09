@@ -1,0 +1,12 @@
+# postgres-service.yml: מספר הטלפון הקבוע של postgres
+apiVersion: v1
+kind: ____                  # איזה משאב נותן כתובת קבועה?
+metadata:
+  name: ____                # חוט! ה-backend מחפש את השם הזה ב-DB_HOST. השם הוא הכתובת
+  namespace: shoplist
+spec:
+  selector:
+    app: ____               # חוט! המדבקה של ה-pods של postgres
+  ports:
+    - port: ____            # הפורט של ה-Service
+      targetPort: ____      # הפורט של ה-container

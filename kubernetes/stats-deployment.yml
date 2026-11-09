@@ -1,0 +1,32 @@
+# stats-deployment.yml: עכשיו אתן (שלב 9א). אותה תבנית כמו backend-deployment.yml
+# ל-stats אין Secret: הוא מדבר רק עם ה-backend
+apiVersion: apps/v1
+kind: ____
+metadata:
+  name: ____
+  namespace: shoplist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ____
+  template:
+    metadata:
+      labels:
+        app: ____                # אותה מדבקה בדיוק כמו בשורה למעלה
+    spec:
+      containers:
+        - name: stats
+          image: ____
+          imagePullPolicy: Never
+          env:
+            - name: BACKEND_URL
+              value: ____        # שם ה-Service של ה-backend, עם http:// ופורט
+          ports:
+            - containerPort: ____
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: ____
+            initialDelaySeconds: 5
+            periodSeconds: 10

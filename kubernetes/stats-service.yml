@@ -1,0 +1,12 @@
+# stats-service.yml: עכשיו אתן (שלב 9ב). רק המפתחות, הערכים עליכן
+apiVersion:
+kind:
+metadata:
+  name:            # השם הזה הוא הכתובת. nginx.conf מחפש אותו
+  namespace:
+spec:
+  selector:
+    app:           # חייב להיות זהה למדבקה ב-stats-deployment.yml
+  ports:
+    - port:
+      targetPort:

@@ -1,0 +1,12 @@
+# postgres-pvc.yml: טופס בקשה לארונית. כאן גרים המוצרים, גם כשה-pod נמחק
+apiVersion: v1
+kind: ____                  # איזה משאב מבקש אחסון קבוע? (שם ארוך, שלוש מילים צמודות)
+metadata:
+  name: postgres-pvc        # חוט! postgres-deployment יבקש את הארונית לפי השם הזה
+  namespace: shoplist
+spec:
+  accessModes:
+    - ____                  # רק node אחד כותב בכל פעם
+  resources:
+    requests:
+      storage: ____         # כמה מקום? גיגה אחד
