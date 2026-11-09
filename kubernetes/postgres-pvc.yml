@@ -1,12 +1,12 @@
-# postgres-pvc.yml: טופס בקשה לארונית. כאן גרים המוצרים, גם כשה-pod נמחק
+# postgres-pvc.yml - request for persistent storage. Products survive when the pod is deleted
 apiVersion: v1
-kind: ____                  # איזה משאב מבקש אחסון קבוע? (שם ארוך, שלוש מילים צמודות)
+kind: ____                  # which resource requests persistent storage? (three words, no spaces)
 metadata:
-  name: postgres-pvc        # חוט! postgres-deployment יבקש את הארונית לפי השם הזה
+  name: postgres-pvc        # postgres-deployment requests the storage by this exact name
   namespace: shoplist
 spec:
   accessModes:
-    - ____                  # רק node אחד כותב בכל פעם
+    - ____                  # only one node writes at a time
   resources:
     requests:
-      storage: ____         # כמה מקום? גיגה אחד
+      storage: ____         # how much space? one gigabyte

@@ -1,11 +1,11 @@
-# frontend-deployment.yml: עכשיו אתן (שלב 9ג). דף ריק
-# רמז: מעתיקות את stats-deployment.yml לכאן, ומוחקות מה שלא צריך
+# frontend-deployment.yml - your turn (step 9c). Blank page
+# Hint: copy stats-deployment.yml here and delete what you don't need
 #
-# רשימת בדיקה:
-#   [ ] ארבע קומות: apiVersion, kind, metadata, spec
-#   [ ] app: frontend בשני מקומות, זהה
-#   [ ] image: shoplist-frontend:local, ו-imagePullPolicy: Never
+# Checklist:
+#   [ ] four levels: apiVersion, kind, metadata, spec
+#   [ ] app: frontend in two places, identical
+#   [ ] image: shoplist-frontend:local and imagePullPolicy: Never
 #   [ ] containerPort: 80
-#   [ ] אין env, אין Secret, אין readinessProbe
+#   [ ] no env, no Secret, no readinessProbe
 #
-# לפני apply: ארבע השאלות, ו- kubectl apply --dry-run=server -f kubernetes/frontend-deployment.yml
+# Before apply: kubectl apply --dry-run=server -f kubernetes/frontend-deployment.yml

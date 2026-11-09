@@ -1,12 +1,12 @@
-# backend-service.yml: מספר הטלפון הקבוע של ה-backend
+# backend-service.yml - a stable address for the backend
 apiVersion: v1
 kind: Service
 metadata:
-  name: ____                # חוט! כך כתוב ב-nginx.conf ובכתובת של stats
+  name: ____                # nginx.conf and stats use this exact name
   namespace: shoplist
 spec:
   selector:
-    app: ____               # חוט! המדבקה מ-backend-deployment.yml
+    app: ____               # label from backend-deployment.yml
   ports:
     - port: ____
       targetPort: ____

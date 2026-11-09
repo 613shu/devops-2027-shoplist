@@ -1,8 +1,8 @@
-# frontend-service.yml: עכשיו אתן (שלב 9ד). דף ריק
-# רמז: מעתיקות את stats-service.yml לכאן. שלושה הבדלים:
+# frontend-service.yml - your turn (step 9d). Blank page
+# Hint: copy stats-service.yml here. Three differences:
 #
-#   [ ] type: NodePort        (הדלת מהמחשב)
-#   [ ] port ו-targetPort: 80
-#   [ ] nodePort: 30080       (באותה הזחה כמו port)
+#   [ ] type: NodePort        (the door from your computer)
+#   [ ] port and targetPort: 80
+#   [ ] nodePort: 30080       (same indentation as port)
 #
-# לפני apply: ארבע השאלות, ו- kubectl apply --dry-run=server -f kubernetes/frontend-service.yml
+# Before apply: kubectl apply --dry-run=server -f kubernetes/frontend-service.yml

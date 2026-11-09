@@ -1,7 +1,7 @@
-# postgres-deployment.yml: ההזמנה הקבועה של postgres. הקובץ הכי צפוף בשיעור
-# כאן מתחברים שלושה חוטים: ה-Secret, ה-ConfigMap וה-PVC
+# postgres-deployment.yml - keeps one postgres pod running
+# Uses three other files by name: the Secret, the ConfigMap and the PVC
 apiVersion: apps/v1
-kind: ____                          # איזה משאב דואג שתמיד יהיה pod?
+kind: ____                          # which resource keeps pods running?
 metadata:
   name: postgres
   namespace: shoplist
@@ -9,34 +9,34 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ____                     # המדבקה שה-Deployment מחפש
+      app: ____                     # the label this Deployment looks for
   template:
     metadata:
       labels:
-        app: ____                   # המדבקה שהוא מדביק. חייבת להיות זהה לשורה למעלה
+        app: ____                   # the label it puts on its pods. Must match the line above
     spec:
       containers:
         - name: postgres
-          image: ____               # אותו image כמו ב-Compose: גרסה 15, alpine
+          image: ____               # same image as in Compose: version 15, alpine
           envFrom:
             - secretRef:
-                name: ____          # חוט! השם של ה-Secret
+                name: ____          # name of the Secret (postgres-secret.yml)
           ports:
-            - containerPort: ____   # הפורט של postgres
+            - containerPort: ____   # postgres port
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "____", "-d", "____"]   # המשתמש ומסד הנתונים מה-Secret, בטקסט רגיל
+              command: ["pg_isready", "-U", "____", "-d", "____"]   # user and database from the Secret, plain text
             initialDelaySeconds: 5
             periodSeconds: 10
           volumeMounts:
-            - name: ____            # חייב להיות זהה לשם ה-volume של הארונית, למטה
+            - name: ____            # must match the storage volume name below
               mountPath: /var/lib/postgresql/data
-            - name: ____            # חייב להיות זהה לשם ה-volume של init.sql, למטה
+            - name: ____            # must match the init.sql volume name below
               mountPath: /docker-entrypoint-initdb.d
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
-            claimName: ____         # חוט! השם של ה-PVC
+            claimName: ____         # name of the PVC (postgres-pvc.yml)
         - name: postgres-init
           configMap:
-            name: ____              # חוט! השם של ה-ConfigMap
+            name: ____              # name of the ConfigMap (postgres-configmap.yml)

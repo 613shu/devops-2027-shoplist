@@ -1,7 +1,7 @@
-# namespace.yml: המחלקה של ShopList ב-cluster
-# ממלאות כל קו ריק לפי המצגת. ארבע השאלות: מה זה? איך קוראים לו? מה הוא רוצה? את מי הוא מוצא?
-# (ל-Namespace אין spec: הוא רק שם)
+# namespace.yml - ShopList's own section of the cluster
+# Fill in every ____ along with the slides.
+# A Namespace has no spec: it is just a name.
 apiVersion: v1
-kind: ____            # איזה משאב יוצר "מחלקה" נפרדת ב-cluster?
+kind: ____            # which resource creates a separate section in the cluster?
 metadata:
-  name: ____          # אותו שם כמו בשיעור 5. כל שאר הקבצים יכתבו אותו ב-namespace:
+  name: ____          # same name as in lesson 5. Every other file uses it in namespace:

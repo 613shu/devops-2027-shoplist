@@ -1,12 +1,12 @@
-# postgres-service.yml: מספר הטלפון הקבוע של postgres
+# postgres-service.yml - a stable address for postgres
 apiVersion: v1
-kind: ____                  # איזה משאב נותן כתובת קבועה?
+kind: ____                  # which resource gives a stable address?
 metadata:
-  name: ____                # חוט! ה-backend מחפש את השם הזה ב-DB_HOST. השם הוא הכתובת
+  name: ____                # the backend uses this name in DB_HOST. The name is the address
   namespace: shoplist
 spec:
   selector:
-    app: ____               # חוט! המדבקה של ה-pods של postgres
+    app: ____               # label of the postgres pods
   ports:
-    - port: ____            # הפורט של ה-Service
-      targetPort: ____      # הפורט של ה-container
+    - port: ____            # Service port
+      targetPort: ____      # container port

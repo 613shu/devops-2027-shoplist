@@ -1,9 +1,9 @@
-# postgres-configmap.yml: הדף על המקרר. init.sql, שיוצר את הטבלה בפעם הראשונה
+# postgres-configmap.yml - init.sql, creates the table on first start
 apiVersion: v1
-kind: ____                  # איזה משאב שומר הגדרות רגילות, לא סודיות?
+kind: ____                  # which resource stores regular (non-secret) configuration?
 metadata:
-  name: postgres-init       # חוט! postgres-deployment יחבר אותו לפי השם הזה
+  name: postgres-init       # postgres-deployment mounts it by this exact name
   namespace: shoplist
 data:
-  ____: |                   # שם הקובץ שיופיע בתוך ה-container (אותו שם כמו בתיקייה sql/)
-    -- מחליפות את השורה הזו בתוכן של sql/init.sql, מוזח ב-4 רווחים
+  ____: |                   # file name inside the container (same as in the sql/ folder)
+    -- replace this line with the content of sql/init.sql, indented by 4 spaces
