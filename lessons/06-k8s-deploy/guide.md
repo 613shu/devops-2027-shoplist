@@ -115,6 +115,34 @@ spec:                   # המצב הרצוי. כאן כל סוג שונה
 
 > **השורה `namespace: shoplist` בכל קובץ:** ככה לא צריך לזכור `-n shoplist` ב-`apply`. אבל ב-`get`, `logs` ו-`describe` עדיין צריך.
 
+### ארבע שאלות לכל קובץ: איך קוראים YAML
+
+לפני שכותבות קובץ, ואחרי שסיימתן, קוראות אותו בקול ועונות על ארבע שאלות. תמיד אותן ארבע:
+
+| שאלה | איפה בקובץ | דוגמה: `backend-service.yml` |
+|---|---|---|
+| 1. מה זה? | `apiVersion` ו-`kind` | Service: מספר טלפון קבוע |
+| 2. איך קוראים לו? | `metadata.name` | `backend`. השם הזה הוא הכתובת |
+| 3. מה הוא רוצה? | `spec` | להעביר שיחות לפורט 5000 |
+| 4. את מי הוא מוצא, ומי מוצא אותו? | `selector`, `...Ref`, `claimName`, שמות | מוצא pods עם `app: backend`. ‏`nginx.conf` ו-stats מוצאים אותו בשם `backend` |
+
+> **שאלה 4 היא החשובה.** קובץ ב-Kubernetes אף פעם לא עומד לבד: הוא מחובר לקבצים אחרים **בשמות**. כשמשהו לא עובד, כמעט תמיד חוט אחד נקרע: שם שכתוב קצת אחרת בשני מקומות.
+
+### למה צריך כל משאב
+
+כל משאב קיים כי בלעדיו משהו נשבר. השאלה "מה היה קורה בלעדיו?" היא הדרך הכי טובה לזכור למה הוא שם.
+
+| משאב | הבעיה שהוא פותר | בלעדיו | אנלוגיה |
+|---|---|---|---|
+| Namespace | 12 משאבים בתוך cluster שיש בו עוד דברים | הכל מעורבב ב-`default`, ומחיקה אחת פוגעת באחרים | המחלקה של ShopList |
+| Deployment | pod לבד מת ולא קם | pod שנמחק נעלם לתמיד | ההזמנה הקבועה (שיעור 5) |
+| Service | לכל pod כתובת IP חדשה בכל לידה | backend לא מוצא את postgres אחרי שה-pod מתחלף | מספר טלפון קבוע |
+| ConfigMap | קובץ הגדרות (`init.sql`) צריך להגיע ל-container | בונים image חדש לכל שינוי הגדרה | הדף על המקרר |
+| Secret | סיסמה לא צריכה להיות כתובה ב-Deployment | הסיסמה גלויה לכל מי שקוראת את ה-Deployment | המעטפה |
+| PersistentVolumeClaim | הדיסק של pod נמחק איתו | כל המוצרים נעלמים כש-postgres מתחלף | טופס בקשה לארונית |
+
+> **readinessProbe** הוא לא משאב נפרד, אלא כמה שורות בתוך ה-Deployment. הוא מחליף את `depends_on`: בלעדיו, ה-Service שולח בקשות ל-pod שעוד לא מוכן.
+
 ### labels ו-selectors: מדבקות
 
 **מה זה:** label היא מדבקה על pod, למשל `app: backend`. selector הוא "תביא לי את כל מי שיש עליו המדבקה הזו".
@@ -602,11 +630,28 @@ kubectl logs deployment/backend -n shoplist
 
 **צפוי:** pod של backend מגיע ל-`1/1`. בלוג: Flask רץ, ובקשות `GET /health` כל 10 שניות. זה ה-readinessProbe דופק בדלת.
 
+### לפני שממשיכות: החוטים בין הקבצים
+
+שמונה קבצים כתובים. עכשיו מסתכלות על מה שמחבר ביניהם: **שמות שחייבים להיות זהים בדיוק בשני מקומות**. זו שאלה 4 מלמעלה, על כל הקבצים יחד.
+
+| השם | מוגדר ב | משתמשים בו ב | אם לא זהה |
+|---|---|---|---|
+| `postgres-secret` | `postgres-secret.yml`, ‏`metadata.name` | `envFrom` ב-postgres, ‏`secretKeyRef.name` ב-backend | pod ב-`CreateContainerConfigError`: ‏`secret not found` |
+| `POSTGRES_PASSWORD` (וגם `_DB`, `_USER`) | `postgres-secret.yml`, ‏`data` | `secretKeyRef.key` ב-backend | `CreateContainerConfigError`: ‏`couldn't find key` |
+| `postgres-init` | `postgres-configmap.yml`, ‏`metadata.name` | `volumes.configMap.name` ב-postgres | pod תקוע ב-`ContainerCreating` |
+| `postgres-pvc` | `postgres-pvc.yml`, ‏`metadata.name` | `claimName` ב-postgres | pod תקוע ב-`Pending` |
+| `postgres-data` (שם ה-volume) | `volumes.name` ב-postgres | `volumeMounts.name`, באותו קובץ | `apply` נכשל: ‏`volumeMounts ... Not found` |
+| `app: backend` | `template.metadata.labels` ב-Deployment | `selector.matchLabels` באותו קובץ, ו-`selector` ב-Service | Deployment: ‏`apply` נכשל. Service: אין endpoints, אין תשובה |
+| `postgres` (שם ה-Service) | `postgres-service.yml`, ‏`metadata.name` | `DB_HOST` ב-backend | backend לא מתחבר למסד הנתונים |
+| `backend`, `stats` (שמות Services) | `backend-service.yml`, ‏`stats-service.yml` | `nginx.conf` בתוך ה-image של frontend, ו-`BACKEND_URL` ב-stats | frontend נופל: ‏`host not found in upstream` |
+
+> **תרגיל של 3 דקות, על דף:** פותחות את `backend-deployment.yml`, ומסמנות כל שם שמחבר אותו למשהו אחר. מה מצאתן? (`postgres` ב-`DB_HOST`: ה-Service. ‏`postgres-secret` ושלושת המפתחות שלו: ה-Secret. ‏`app: backend`: מה שה-Service מחפש. ‏`shoplist-backend:local`: השם מה-`docker build`.)
+
 ---
 
 ### שלב 9 — עכשיו אתן: stats ו-frontend (תרגיל 2, 15 דקות)
 
-אותה תבנית בדיוק כמו ה-backend. מה משתנה:
+ארבעה קבצים, **וכל אחד עם פחות עזרה מהקודם**: שלד עם קווים, אחר כך רק המפתחות, ובסוף דף ריק. אותה תבנית כמו ה-backend. מה משתנה:
 
 | | stats | frontend |
 |---|---|---|
@@ -617,7 +662,80 @@ kubectl logs deployment/backend -n shoplist
 | readinessProbe | `/health` בפורט 3000 | אין |
 | Service | ClusterIP, פורט 3000 | **NodePort**, פורט 80, `nodePort: 30080` |
 
-נסו לכתוב לבד. נתקעתן? הקבצים המלאים כאן:
+**9א — `stats-deployment.yml`: שלד עם קווים.** משלימות כל `____`:
+
+```yaml
+apiVersion: apps/v1
+kind: ____
+metadata:
+  name: ____
+  namespace: shoplist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ____
+  template:
+    metadata:
+      labels:
+        app: ____                # אותה מדבקה בדיוק כמו בשורה למעלה
+    spec:
+      containers:
+        - name: stats
+          image: ____
+          imagePullPolicy: Never
+          env:
+            - name: BACKEND_URL
+              value: ____        # שם ה-Service של ה-backend, עם http:// ופורט
+          ports:
+            - containerPort: ____
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: ____
+            initialDelaySeconds: 5
+            periodSeconds: 10
+```
+
+**9ב — `stats-service.yml`: רק המפתחות.** הערכים עליכן:
+
+```yaml
+apiVersion:
+kind:
+metadata:
+  name:            # השם הזה הוא הכתובת. nginx.conf מחפש אותו
+  namespace:
+spec:
+  selector:
+    app:           # חייב להיות זהה למדבקה ב-stats-deployment.yml
+  ports:
+    - port:
+      targetPort:
+```
+
+**9ג — `frontend-deployment.yml`: דף ריק.** רמז: מעתיקות את `stats-deployment.yml`, ומוחקות. רשימת בדיקה:
+
+- [ ] ארבע קומות
+- [ ] `app: frontend` בשני מקומות, זהה
+- [ ] `image: shoplist-frontend:local` ו-`imagePullPolicy: Never`
+- [ ] `containerPort: 80`
+- [ ] **אין** `env`, אין Secret, אין readinessProbe
+
+**9ד — `frontend-service.yml`: דף ריק.** שלושה הבדלים מ-`stats-service.yml`:
+
+- [ ] `type: NodePort`
+- [ ] `port` ו-`targetPort`: ‏80
+- [ ] `nodePort: 30080`, באותה הזחה כמו `port`
+
+**לפני כל `apply`:** ארבע השאלות על הקובץ, בקול. ובדיקה בלי ליצור כלום:
+
+```shell
+kubectl apply --dry-run=server -f kubernetes/stats-deployment.yml
+```
+
+**צפוי:** `deployment.apps/stats created (server dry run)`. שגיאת כתיב או הזחה? היא מופיעה כאן, לפני שמשהו נוצר.
+
+נתקעתן? הקבצים המלאים כאן:
 
 <details>
 <summary><code>kubernetes/stats-deployment.yml</code></summary>
