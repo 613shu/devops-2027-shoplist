@@ -258,6 +258,38 @@ echo c2hvcHBhc3M= | base64 -d
 
 > **ואין `depends_on`:** אם ה-backend עולה לפני postgres, הבדיקה שלו פשוט נכשלת עוד כמה פעמים, ו-Kubernetes ממשיך לנסות. לא צריך להגיד לו באיזה סדר.
 
+### readiness מול liveness: השלט על הדלת, ובדיקת הדופק
+
+| | readinessProbe | livenessProbe |
+|---|---|---|
+| **השאלה** | "את מוכנה לקבל לקוחות?" | "את בכלל חיה?" |
+| **כשנכשל** | ה-pod יוצא מה-endpoints. ה-Service מפסיק לשלוח אליו. **לא מפעילים מחדש** | ה-kubelet **מפעילה מחדש** את ה-container (אחרי `failureThreshold` כישלונות ברצף) |
+| **בשביל מה** | עלייה, עומס, תלות שעוד לא מוכנה | תהליך שנתקע: לא קרס, אבל לא עונה |
+| **בקונדיטוריה** | השלט "פתוח/סגור" | אופה שנרדמה ליד התנור: מעירים אותה |
+
+ויש שלישית, **startupProbe**, לאפליקציות שעולות לאט: עד שהיא עוברת, ה-liveness לא מתחיל, כדי שלא יפעיל מחדש אפליקציה שעוד לא סיימה לעלות.
+
+ככה נראה backend עם שתיהן:
+
+```yaml
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+```
+
+> **טעות נפוצה, ומסוכנת:** liveness שבודק גם את מסד הנתונים. postgres נופל לדקה, כל ה-backends נכשלים ב-liveness ומופעלים מחדש שוב ושוב, בדיוק כשהמערכת חלשה. הכלל: **liveness בודק רק שהתהליך עצמו חי.** readiness יכול לבדוק תלויות.
+
+> **בקבצים של היום יש רק readiness.** הוספת liveness היא בונוס בשיעורי הבית (ד12).
+
 ---
 
 ## חלק 3 — בונים יחד
