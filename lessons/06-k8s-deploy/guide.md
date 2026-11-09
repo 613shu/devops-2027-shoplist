@@ -780,6 +780,61 @@ kubectl apply -f kubernetes/
 
 ---
 
+## חלק 6 — ומה בענן? Ingress, ואיך ShopList נראית באינטרנט
+
+### Ingress: פקידת הקבלה של ה-cluster
+
+**מה זה:** כניסה אחת לכל ה-cluster, ששולחת כל בקשה ל-Service הנכון לפי **שם האתר** (host) ו**הנתיב** (path). אותו רעיון כמו `nginx.conf` משיעור 4, ברמת ה-cluster.
+
+**למה זה קיים:** בענן, LoadBalancer לכל Service עולה כסף: מאזן עומס נפרד לכל סרוויס. עם Ingress יש מאזן אחד, ומאחוריו כמה סרוויסים.
+
+**איך זה עובד:** שני חלקים.
+
+| חלק | מה זה |
+|---|---|
+| קובץ `kind: Ingress` | הכללים: `shop.example.com` הולך ל-Service בשם `frontend`, בפורט 80 |
+| Ingress Controller | התוכנה שמבצעת את הכללים: ingress-nginx, או ב-AWS ה-Load Balancer Controller שיוצר ALB |
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shoplist
+  namespace: shoplist
+spec:
+  rules:
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+```
+
+> **טעות נפוצה:** לכתוב קובץ Ingress ולחכות שיקרה משהו. בלי Ingress Controller, הקובץ לא עושה כלום. ב-Docker Desktop אין controller מותקן, ולכן בכיתה השתמשנו ב-NodePort. וגם: Ingress הוא לא סוג של Service. ה-Services שמאחוריו נשארים ClusterIP.
+
+### ShopList ב-cluster בענן
+
+```
+משתמשת ← DNS (shop.example.com) ← Load Balancer של הענן ← Ingress Controller ← Services (ClusterIP) ← pods
+```
+
+| | בכיתה (Docker Desktop) | בענן (EKS, AKS, GKE) |
+|---|---|---|
+| הכניסה | NodePort, `localhost:30080` | Load Balancer עם כתובת ציבורית ו-HTTPS, ואחריו Ingress |
+| nodes | אחד, המחשב שלכן | כמה, באזורים שונים (Availability Zones), ברשת פרטית בלי כתובת ציבורית |
+| ההנהלה | על אותו node | מנוהלת על ידי הספק. לא רואים אותה |
+| images | מהמחשב, `imagePullPolicy: Never` | מ-registry (שיעור 8) |
+| הארונית (PVC) | תיקייה במחשב (`hostpath`) | דיסק של הענן, למשל EBS. או מסד נתונים מנוהל, כמו RDS |
+
+**הרעיון המרכזי:** דלת ציבורית אחת, וכל השאר פנימי.
+
+---
+
 ## תקלות נפוצות
 
 | בעיה | סיבה | פתרון |
