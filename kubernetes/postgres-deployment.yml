@@ -21,6 +21,8 @@ spec:
           envFrom:
             - secretRef:
                 name: ____          # name of the Secret (postgres-secret.yml)
+            - configMapRef:
+                name: ____          # name of the ConfigMap (postgres-configmap.yml)
           ports:
             - containerPort: ____   # postgres port
           readinessProbe:

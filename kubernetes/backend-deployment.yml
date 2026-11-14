@@ -23,12 +23,12 @@ spec:
               value: ____           # name of the postgres Service. Not a secret, so written directly
             - name: DB_NAME
               valueFrom:
-                secretKeyRef:
+                configMapRef:
                   name: ____        # name of the Secret
                   key: ____         # which Secret key holds the database name?
             - name: DB_USER
               valueFrom:
-                secretKeyRef:
+                configMapRef:
                   name: ____
                   key: ____         # which key holds the user?
             - name: DB_PASSWORD
