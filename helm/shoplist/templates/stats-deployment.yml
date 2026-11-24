@@ -1,0 +1,39 @@
+# stats-deployment.yml - same pattern as backend-deployment.yml
+# stats has no Secret: it only talks to the backend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stats
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.stats.replicas }}
+  selector:
+    matchLabels:
+      app: stats
+  template:
+    metadata:
+      labels:
+        app: stats
+    spec:
+      containers:
+        - name: stats
+          image: {{ .Values.stats.image.repository }}:{{ .Values.stats.image.tag }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: BACKEND_URL
+              value: http://backend:5000
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: {{ .Values.stats.resources.requests.cpu | quote }}
+              memory: {{ .Values.stats.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.stats.resources.limits.cpu | quote }}
+              memory: {{ .Values.stats.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10

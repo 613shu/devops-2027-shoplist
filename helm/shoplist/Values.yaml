@@ -1,0 +1,27 @@
+
+imagePullPolicy: Never
+
+backend:
+  replicas: 1
+  image:
+    repository: shoplist-backend
+    tag: local
+
+stats:
+  replicas: 1
+  image:
+    repository: shoplist-stats
+    tag: local
+
+frontend:
+  replicas: 1
+  nodePort: 30080
+  image:
+    repository: shoplist-frontend
+    tag: local
+
+postgres:
+  database: shoplist
+  user: shopuser
+  password: shoppass
+  storage: 1Gi

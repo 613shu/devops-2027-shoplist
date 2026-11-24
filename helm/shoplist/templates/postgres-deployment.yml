@@ -1,0 +1,49 @@
+# postgres-deployment.yml - keeps one postgres pod running
+# Uses three other files by name: the Secret, the ConfigMap and the PVC
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres                  # must match the selector above
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          ports:
+            - containerPort: 5432
+          resources:
+            requests:
+              cpu: {{ .Values.postgres.resources.requests.cpu | quote }}
+              memory: {{ .Values.postgres.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.postgres.resources.limits.cpu | quote }}
+              memory: {{ .Values.postgres.resources.limits.memory }}
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.postgres.user }}", "-d", "{{ .Values.postgres.database }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: postgres-init
+          configMap:
+            name: postgres-init
